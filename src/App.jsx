@@ -183,7 +183,9 @@ const HOW_TO = [
 ];
 
 export default function App() {
-  const [tab, setTab] = useState("intent");
+  const [tab, setTab] = useState("builder");
+  const [rawContext, setRawContext] = useState("");
+  const [buildingIntent, setBuildingIntent] = useState(false);
   const [intent, setIntent] = useState("");
   const [transcript, setTranscript] = useState("");
   const [reelsCount, setReelsCount] = useState(10);
@@ -198,6 +200,27 @@ export default function App() {
   const intentReady = intent.trim().length > 10;
   const transcriptReady = transcript.trim().length > 20;
   const canRun = transcriptReady && !running;
+
+  async function buildIntent() {
+    if (!rawContext.trim()) return;
+    setBuildingIntent(true);
+    try {
+      const res = await fetch(`${API}/api/build-intent`, {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ raw: rawContext }),
+      });
+      const data = await res.json();
+      if (data.intent) {
+        setIntent(data.intent);
+        setTab("intent");
+      }
+    } catch (e) {
+      console.error(e);
+    } finally {
+      setBuildingIntent(false);
+    }
+  }
 
   const runPipeline = useCallback(async () => {
     if (!canRun) { if (!transcriptReady) setTab("transcript"); return; }
@@ -274,6 +297,7 @@ export default function App() {
 
         {/* Tabs */}
         <div style={{ display: "flex", gap: 4, borderBottom: "2px solid #2a2a45" }}>
+          <Tab label="✨  BUILDER" active={tab === "builder"} onClick={() => setTab("builder")} warn={false} />
           <Tab label="🎯  INTENT" active={tab === "intent"} onClick={() => setTab("intent")} warn={!intentReady} />
           <Tab label="📄  TRANSCRIPT" active={tab === "transcript"} onClick={() => setTab("transcript")} warn={!transcriptReady} />
         </div>
@@ -282,6 +306,54 @@ export default function App() {
           background: "#13131f", border: "2px solid #2a2a45", borderTop: "none",
           borderRadius: "0 12px 12px 12px", padding: "26px", marginBottom: 22,
         }}>
+
+          {/* Builder Tab */}
+          {tab === "builder" && (
+            <div style={{ animation: "fadeIn 0.2s ease" }}>
+              <div style={{ color: "#ff6b6b", fontSize: 11, letterSpacing: 3, marginBottom: 8, fontWeight: "700" }}>✨ INTENT BUILDER</div>
+              <div style={{ color: "#8888aa", fontSize: 13, lineHeight: 1.8, marginBottom: 16 }}>
+                Paste anything — a video caption, title, a few rough notes, or a description of the session.
+                AI will build a full structured intent for you and auto-fill the Intent tab.
+              </div>
+              <textarea
+                value={rawContext}
+                onChange={e => setRawContext(e.target.value)}
+                placeholder={`Example:\n"Dr. Ahmed, a nephrologist from Aga Khan, talks about PD catheter insertion in a webinar hosted by us (Byonyks). We want medical clips for Facebook Reels. No business talk."`}
+                rows={8}
+                style={{
+                  width: "100%", background: "#0a0a16",
+                  border: `2px solid ${rawContext.trim().length > 10 ? "#ff6b6b88" : "#2a2a45"}`,
+                  borderRadius: 10, padding: "16px 18px",
+                  color: "#e0e0e0", fontSize: 13, resize: "vertical", outline: "none",
+                  boxSizing: "border-box", lineHeight: 1.9, transition: "border-color 0.3s",
+                }}
+                onFocus={e => e.target.style.borderColor = "#ff6b6b"}
+                onBlur={e => e.target.style.borderColor = rawContext.trim().length > 10 ? "#ff6b6b88" : "#2a2a45"}
+              />
+              <div style={{ marginTop: 14, display: "flex", alignItems: "center", gap: 12 }}>
+                <button
+                  onClick={buildIntent}
+                  disabled={buildingIntent || rawContext.trim().length < 10}
+                  style={{
+                    background: rawContext.trim().length > 10 ? "linear-gradient(135deg, #ff6b6b22, #ffd93d22)" : "#0e0e1a",
+                    border: `2px solid ${rawContext.trim().length > 10 ? "#ff6b6b" : "#2a2a45"}`,
+                    borderRadius: 10, padding: "12px 28px",
+                    color: rawContext.trim().length > 10 ? "#ff6b6b" : "#333355",
+                    fontFamily: "monospace", fontSize: 13, cursor: rawContext.trim().length > 10 ? "pointer" : "not-allowed",
+                    letterSpacing: 2, fontWeight: "bold", transition: "all 0.2s",
+                    boxShadow: rawContext.trim().length > 10 ? "0 0 20px #ff6b6b25" : "none",
+                  }}
+                >
+                  {buildingIntent ? "✨ BUILDING INTENT…" : "✨ BUILD INTENT"}
+                </button>
+                {intentReady && (
+                  <span style={{ color: "#6bff6b", fontSize: 12, fontWeight: "700" }}>
+                    ✓ Intent ready — check the Intent tab
+                  </span>
+                )}
+              </div>
+            </div>
+          )}
 
           {/* Intent Tab */}
           {tab === "intent" && (
