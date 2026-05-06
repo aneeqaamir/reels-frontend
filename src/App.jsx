@@ -98,7 +98,9 @@ function CopyButton({ text, label = "Copy" }) {
 function TimestampCard({ ts, rank }) {
   const s = ts.score;
   const sc = s >= 8 ? "#ffd93d" : s >= 6 ? "#ff6b6b" : "#00e5ff";
-  const copyContent = `[${ts.timestamp}] ${ts.title}\n${ts.description || ""}${ts.why ? `\nScore ${ts.score}/10 — ${ts.why}` : ""}`;
+  const startTime = ts.start_time || ts.timestamp || "";
+  const endTime = ts.end_time || "";
+  const copyContent = `[${startTime}${endTime ? ` → ${endTime}` : ""}] ${ts.title}\n${ts.description || ""}${ts.why ? `\nScore ${ts.score}/10 — ${ts.why}` : ""}`;
   return (
     <div style={{
       background: "#0e0e1c", border: `1.5px solid ${sc}55`,
@@ -119,8 +121,12 @@ function TimestampCard({ ts, rank }) {
         <div style={{ display: "flex", flexWrap: "wrap", alignItems: "center", gap: 6, marginBottom: 8 }}>
           <span style={{
             background: "#1a1a30", border: "1.5px solid #3a3a5a",
-            borderRadius: 5, padding: "3px 8px", fontFamily: "monospace", fontSize: 12, color: "#bbb", fontWeight: "600"
-          }}>{ts.timestamp}</span>
+            borderRadius: 5, padding: "4px 10px", fontFamily: "monospace", fontSize: 12, color: "#bbb", fontWeight: "600",
+            display: "flex", alignItems: "center", gap: 6,
+          }}>
+            <span style={{color: "#6bff6b"}}>▶ {startTime}</span>
+            {endTime && <><span style={{color: "#444466"}}>→</span><span style={{color: "#00e5ff"}}>■ {endTime}</span></>}
+          </span>
           {ts.score !== undefined && (
             <span style={{
               background: `${sc}22`, border: `1.5px solid ${sc}`,
@@ -592,7 +598,10 @@ export default function App() {
                 return (
                   <div key={i} style={{ flex: 1, borderRight: i < 2 ? "1px solid #2a2a45" : "none", paddingRight: i < 2 ? 14 : 0 }}>
                     <div style={{ fontSize: 18, marginBottom: 6 }}>{medals[i]}</div>
-                    <div style={{ fontFamily: "monospace", fontSize: 14, color: sc, fontWeight: "bold", marginBottom: 4 }}>{ts.timestamp}</div>
+                    <div style={{ fontFamily: "monospace", fontSize: 13, color: sc, fontWeight: "bold", marginBottom: 2 }}>
+                      ▶ {ts.start_time || ts.timestamp}
+                    </div>
+                    {ts.end_time && <div style={{ fontFamily: "monospace", fontSize: 12, color: "#00e5ff", marginBottom: 4 }}>■ {ts.end_time}</div>}
                     <div style={{ color: "#aaaacc", fontSize: 12, lineHeight: 1.5, marginBottom: 4 }}>{ts.title}</div>
                     <div style={{ color: sc, fontSize: 12, fontWeight: "700" }}>Score: {ts.score}/10</div>
                   </div>
